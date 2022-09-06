@@ -14,8 +14,8 @@ from sklearn.feature_extraction.text import TfidfVectorizer
     
 def load_data(PATH):
     
-    papers = pd.read_csv(PATH)
-    return papers[:100]
+    papers = pd.read_csv(PATH, nrows=10)
+    return papers
 
     
 def drop_meaningless(papers):

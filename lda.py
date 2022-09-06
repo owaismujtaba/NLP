@@ -3,9 +3,10 @@ from utils import load_data
 from gensim import corpora
 import spacy
 import pyLDAvis
+import pyLDAvis.gensim_models as gensimvis
 import os
 import pdb
-
+from gensim.models import TfidfModel
 
 def lemantization(texts, allowed_postages=['NOUN', 'ADJ', 'VERD', 'ADV']):
 
@@ -38,8 +39,16 @@ def lemantization(texts, allowed_postages=['NOUN', 'ADJ', 'VERD', 'ADV']):
 
 
 
+
+
 def gen_words(texts):
-    
+    """
+    Generate words for the lematized text
+    Args:
+        texts: texts
+    return:
+        final: a 2d list of lemmantization words
+    """
     final = []
     #pdb.set_trace()
     for text in texts:
@@ -49,7 +58,19 @@ def gen_words(texts):
 
 
 
+
+
+
 def idtoword(lem_words):
+    """
+    Thif function converts the text in 2d list to corpus and id2word dictionary for the LDA model as input
+    Args:
+        lem_words: A 2d list of words
+    Return:
+        corpus: corpus of words
+        id2word: corpora of words for model
+    """
+    #pdb.set_trace()
     id2word = corpora.Dictionary(lem_words)
     
     corpus = []
@@ -62,6 +83,9 @@ def idtoword(lem_words):
     return id2word, corpus
 
 
+
+
+
 def preprocess_data(texts):
     
     lem_texts = lemantization(texts)
@@ -70,9 +94,12 @@ def preprocess_data(texts):
     
     return id2word, corpus
     
-def LDA(id2word, corpus):
     
-    #pdb.set_trace()
+    
+    
+def LDA(id2word, corpus):
+
+    
     model = gensim.models.ldamodel.LdaModel(
         corpus = corpus,
         id2word=id2word,
@@ -83,11 +110,84 @@ def LDA(id2word, corpus):
         passes=10,
         alpha='auto')
     
-    vis = pyLDAvis.gensim.prepare(
-        model, corpus, id2word, mds="mds", R=30)
-    pyLDAvis.save_html(vis, os.getcwd()+/'Results/ldavis.html')
+    vis = gensimvis.prepare(
+        model, 
+        corpus, 
+        id2word, 
+        mds="mds",
+        R=30)
+    
+    pyLDAvis.save_html(vis, os.getcwd()+'/Results/ldavisbigramstrigrams.html')
     print("visualization saved in Results")
     
+
+
+def make_bigrams_trigrams(data):
+    """
+    converts the list of words n*n into data bigrams and trigrams
+    Args:
+        data: 2d list of words
+        data: 2d list of words: 2d list of words having data bigrams and trigrams
+    """
     
+    lem_text = lemantization(data)
+    lem_words = gen_words(lem_text)
     
-                                        
+    bigram_phrases = gensim.models.Phrases(lem_words, min_count=5, threshold=50)
+    trigram_phrases = gensim.models.Phrases(bigram_phrases[lem_words], threshold=50)
+
+    bigram = gensim.models.phrases.Phraser(bigram_phrases)
+    trigram = gensim.models.phrases.Phraser(trigram_phrases)
+    data_bigrams_trigrams = []
+    
+    for doc in lem_words:
+
+        doc_bigrams = bigram[doc]
+        doc_bigrams_trigrams = trigram[doc]
+        data_bigrams_trigrams.append(doc_bigrams)
+        
+    return data_bigrams_trigrams
+    
+
+def tfidf_removal(data_bigrams_trigrams):
+    """
+    Removal of frequently occuring words 
+    Args:
+        data_bigrams_trigrams: 2d list of words of bigrams and trigrams
+    Dependency:
+        idtoword: which converts the data to corpus and corpora.Dictionary
+    return:
+        id2word: dictionary
+        corpus: corpus of words Ready for the LDA Model as input
+    
+    """
+    
+    id2word, corpus = idtoword(data_bigrams_trigrams)
+    
+    tfidf = TfidfModel(corpus, id2word)
+    low_value = 0.03
+    words = []
+    words_missing_in_tfidf = []
+    
+    for i in range(0, len(corpus)):
+        
+        bow = corpus[i]
+        low_value_words = []
+        
+        tfidf_ids = [id for id, value in tfidf[bow]]
+        bow_ids = [id for id, value in bow]
+        
+        low_value_words = [id for id, value in tfidf[bow] if value < low_value]
+        drops = low_value_words + words_missing_in_tfidf
+        
+        for item in drops:
+            words.append(id2word[item])
+        
+        words_missing_in_tfidf = [id for id in bow_ids if id not in tfidf_ids]
+        
+        new_bow = [b for b in bow if b[0] not in low_value_words and b[0] not in words_missing_in_tfidf]
+        
+        corpus[i] = new_bow
+        
+    
+    return id2word, corpus
