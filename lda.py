@@ -90,6 +90,7 @@ def preprocess_data(texts):
     
     lem_texts = lemantization(texts)
     lem_words = gen_words(lem_texts)
+    pdb.set_trace()
     id2word, corpus = idtoword(lem_words)
     
     return id2word, corpus
@@ -119,6 +120,7 @@ def LDA(id2word, corpus):
     
     pyLDAvis.save_html(vis, os.getcwd()+'/Results/ldavisbigramstrigrams.html')
     print("visualization saved in Results")
+    return model
     
 
 
@@ -191,3 +193,12 @@ def tfidf_removal(data_bigrams_trigrams):
         
     
     return id2word, corpus
+
+
+def Sort(sub_li):
+    
+    sub_li.sort(key = lambda x: x[1])
+    sub_li.reverse()
+    
+    return sub_li
+

@@ -3,6 +3,7 @@ import os
 import re
 import pdb
 import nltk
+import gensim
 #nltk.download('stopwords')
 from nltk.corpus import stopwords
 import string
@@ -60,3 +61,68 @@ def cleaned_data(PATH):
     return data
 
 
+
+
+
+def test_model():
+    
+    # load the saved model
+    model_path = os.getcwd()+"/Models/ldamodel.model"
+    model = gensim.models.ldamodel.LdaModel.load(model_path)
+    print("Model Loaded Scucessfully")
+    
+    return model
+    
+    
+    
+    
+    
+    
+def clean_text(documents):
+    """
+    The function cleans the text in the documents:
+    Args:
+        documents: A list of documnets
+    """
+    from gensim.utils import simple_preprocess
+    from spacy import load
+    from nltk.corpus import stopwords
+    from nltk.tokenize import word_tokenize
+    nltk.download('punkt')
+    
+    
+
+    stops = stopwords.words('english')
+    
+    
+    for doc in documents:
+        
+        words = word_tokenize(doc)
+        
+        words = [w.lower() for w in words if not w.lower() in stops]
+        
+        pdb.set_trace()
+    
+    
+    
+    '''
+    nlp = load("en_core_web_sm")
+   
+    cleaned_documents = []
+    for doc in documents:
+        cleaned_doc = []
+        words_in_doc = nlp(doc)        
+        for word in words_in_doc:
+            if word.tag_ in ['NNP', 'VBZ', 'VBG', 'IN', 'NN']:
+                cleaned_doc.append(word)
+        
+        cleaned_doc = [w for w in cleaned_doc if not w.lower() in stops]
+        
+        cleaned_documents.append(cleaned_doc)
+        pdb.set_trace()
+    print(tags)
+    print(len(tags))
+    '''
+    
+        
+        
